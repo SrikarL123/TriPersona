@@ -1,10 +1,9 @@
 from flask import Flask, request, jsonify, send_file, Response
 from groq import Groq
 from dotenv import load_dotenv
-import os
-import re
 from datetime import datetime
 from zoneinfo import ZoneInfo
+import os
 
 load_dotenv()
 
@@ -24,9 +23,9 @@ try:
     from firebase_admin import credentials, db as firebase_db
 
     service_account_path = os.environ.get(
-    "FIREBASE_SERVICE_ACCOUNT_PATH",
-    "/etc/secrets/serviceAccountKey.json"
-)
+        "FIREBASE_SERVICE_ACCOUNT_PATH",
+        "/etc/secrets/serviceAccountKey.json"
+    )
     database_url = os.environ.get("FIREBASE_DATABASE_URL")
 
     print(f"🔍 Service account path: {service_account_path}")
@@ -39,12 +38,9 @@ try:
     if not database_url:
         raise ValueError("FIREBASE_DATABASE_URL is not set in .env")
 
-    # Initialize Firebase ONLY once
     if not firebase_admin._apps:
         cred = credentials.Certificate(service_account_path)
-        firebase_admin.initialize_app(cred, {
-            "databaseURL": database_url
-        })
+        firebase_admin.initialize_app(cred, {"databaseURL": database_url})
 
     firebase_ready = True
     print("✅ Firebase Admin initialized successfully")
@@ -62,7 +58,6 @@ SYSTEM_PROMPTS = {
         "You are a helpful, knowledgeable assistant. "
         "Give clear and accurate answers. Be concise unless the user asks for more detail."
     ),
-
     "spiderman": (
         "You are a friendly neighbourhood chatbot — warm, casual, and easy to talk to. "
         "Keep answers short, simple, and easy to understand. "
@@ -71,7 +66,6 @@ SYSTEM_PROMPTS = {
         "If something is complex, break it down simply. "
         "You can add light humour occasionally but keep it natural."
     ),
-
     "batman": (
         "You embody the ego and mindset of Isagi Yoichi from Blue Lock — "
         "relentlessly driven, intense, and utterly focused on becoming the best. "
@@ -111,7 +105,6 @@ def status():
         "FIREBASE_SERVICE_ACCOUNT_PATH",
         "/etc/secrets/serviceAccountKey.json"
     )
-
     return jsonify({
         "firebase_ready": firebase_ready,
         "firebase_error": firebase_error,
@@ -130,7 +123,7 @@ def firebase_config_js():
   storageBucket: "{os.environ.get('FIREBASE_STORAGE_BUCKET')}",
   messagingSenderId: "{os.environ.get('FIREBASE_MESSAGING_SENDER_ID')}",
   appId: "{os.environ.get('FIREBASE_APP_ID')}"
-}};
+}};"""
     return Response(config, mimetype="application/javascript")
 
 @app.route("/")
@@ -141,11 +134,8 @@ def start():
 def chatbot():
     return send_file(os.path.join(BASE_DIR, "chat.html"))
 
-from datetime import datetime
-
 @app.route("/save-user", methods=["POST"])
 def save_user():
-
     if not firebase_ready:
         return jsonify({"status": "error", "message": "Firebase not initialized"}), 500
 
@@ -158,22 +148,19 @@ def save_user():
 
         started_at = datetime.now(ZoneInfo("Asia/Kolkata")).strftime("%Y-%m-%d %H:%M:%S IST")
 
-        ref = firebase_db.reference("users").push()
-
-        ref.set({
+        firebase_db.reference("users").push({
             "name": name,
             "startedAt": started_at
         })
 
-        return jsonify({
-            "status": "success"
-        })
+        print(f"✅ Saved user: {name}")
+        return jsonify({"status": "success"})
 
     except Exception as e:
+        print(f"❌ Save error: {e}")
         return jsonify({"status": "error", "message": str(e)}), 500
 
 @app.route("/chat", methods=["POST"])
-# ... (rest of your existing chat logic) ...
 def chat():
     try:
         data = request.get_json()
