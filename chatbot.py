@@ -21,25 +21,20 @@ firebase_error = ""
 try:
     import firebase_admin
     from firebase_admin import credentials, db as firebase_db
+    import json
 
-    service_account_path = os.environ.get(
-        "FIREBASE_SERVICE_ACCOUNT_PATH",
-        "/etc/secrets/serviceAccountKey.json"
-    )
     database_url = os.environ.get("FIREBASE_DATABASE_URL")
 
-    print(f"🔍 Service account path: {service_account_path}")
-    print(f"🔍 Service account file exists: {os.path.exists(service_account_path)}")
-    print(f"🔍 Database URL: {database_url}")
-
-    if not os.path.exists(service_account_path):
-        raise FileNotFoundError(f"serviceAccountKey.json not found at: {service_account_path}")
-
     if not database_url:
-        raise ValueError("FIREBASE_DATABASE_URL is not set in .env")
+        raise ValueError("FIREBASE_DATABASE_URL is not set")
 
     if not firebase_admin._apps:
-        cred = credentials.Certificate(service_account_path)
+        service_account_json = os.environ.get("FIREBASE_SERVICE_ACCOUNT_JSON")
+        if not service_account_json:
+            raise ValueError("FIREBASE_SERVICE_ACCOUNT_JSON is not set")
+
+        service_account_info = json.loads(service_account_json)
+        cred = credentials.Certificate(service_account_info)
         firebase_admin.initialize_app(cred, {"databaseURL": database_url})
 
     firebase_ready = True
