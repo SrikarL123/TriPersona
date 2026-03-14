@@ -21,7 +21,10 @@ try:
     import firebase_admin
     from firebase_admin import credentials, db as firebase_db
 
-    service_account_path = os.environ.get("FIREBASE_SERVICE_ACCOUNT_PATH", "serviceAccountKey.json")
+    service_account_path = os.environ.get(
+    "FIREBASE_SERVICE_ACCOUNT_PATH",
+    "/etc/secrets/serviceAccountKey.json"
+)
     database_url = os.environ.get("FIREBASE_DATABASE_URL")
 
     print(f"🔍 Service account path: {service_account_path}")
