@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Chatbot</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    /* ── AGENT THEMES ──────────────────────────────── */
+    :root {
+      --accent:      #4d9fff;
+      --accent2:     #0d47a1;
+      --bg-image:    url("/static/dark.png");
+      --bg-size:     cover;
+      --bg-position: center;
+      --glass:       rgba(10,20,40,0.72);
+      --border:      rgba(100,160,255,0.12);
+      --input-bg:    rgba(255,255,255,0.05);
+      --text:        #e8f0fe;
+      --subtext:     rgba(180,210,255,0.50);
+      --user-bubble: rgba(30,100,220,0.88);
+      --bot-bubble:  rgba(13,27,58,0.85);
+      --font-head:   'Rajdhani', sans-serif;
+      --font-body:   'Inter', sans-serif;
+    }
+    [data-agent="spiderman"] {
+      --accent:      #1e40af;
+      --accent2:     #1d3557;
+      --bg-image:    url("/static/friendly.png");
+      --bg-size:     cover;
+      --bg-position: center;
+      --glass:       rgba(5,10,30,0.75);
+      --border:      rgba(30,64,175,0.35);
+      --input-bg:    rgba(30,64,175,0.12);
+      --text:        #ffffff;
+      --subtext:     rgba(147,197,253,0.88);
+      --user-bubble: rgba(29,78,216,0.92);
+      --bot-bubble:  rgba(8,15,45,0.88);
+    }
+    [data-agent="batman"] {
+      --accent:      #a855f7;
+      --accent2:     #3b0764;
+      --bg-image:    url("/static/ego.png");
+      --bg-size:     cover;
+      --bg-position: center;
+      --glass:       rgba(10,2,20,0.84);
+      --border:      rgba(168,85,247,0.28);
+      --input-bg:    rgba(168,85,247,0.08);
+      --text:        #ffffff;
+      --subtext:     rgba(216,180,254,0.85);
+      --user-bubble: rgba(109,40,217,0.92);
+      --bot-bubble:  rgba(20,5,35,0.92);
+    }
+    /* Light mode — normal agent only — warm sky & cream */
+    [data-agent="normal"][data-theme="light"] {
+      --bg-image:    url("/static/light.png");
+      --bg-size:     cover;
+      --bg-position: center;
+      --glass:       rgba(255,255,255,0.55);
+      --border:      rgba(30,80,180,0.15);
+      --input-bg:    rgba(255,255,255,0.60);
+      --text:        #1e3a5f;
+      --subtext:     rgba(30,80,160,0.55);
+      --accent:      #2563eb;
+      --user-bubble: rgba(37,99,235,0.88);
+      --bot-bubble:  rgba(255,255,255,0.75);
+    }
+
+    /* ── BASE ──────────────────────────────────────── */
+    html { height: 100%; }
+
+    body {
+      font-family: var(--font-body);
+      min-height: 100vh;
+      background-image: var(--bg-image);
+      background-size: var(--bg-size);
+      background-position: var(--bg-position);
+      background-repeat: no-repeat;
+      background-attachment: fixed;
+      background-color: #060d1a;
+      color: var(--text);
+      transition: background 0.4s ease;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px 16px 30px;
+    }
+
+    /* ── AGENT SELECTOR ────────────────────────────── */
+    .agent-bar {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 18px;
+      background: var(--glass);
+      border: 1px solid var(--border);
+      backdrop-filter: blur(14px);
+      padding: 8px 10px;
+      border-radius: 50px;
+    }
+    .agent-btn {
+      font-family: var(--font-head);
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      padding: 8px 20px;
+      border-radius: 40px;
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--subtext);
+      cursor: pointer;
+      transition: all 0.22s ease;
+    }
+    .agent-btn:hover { color: var(--text); }
+    .agent-btn.active {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+      box-shadow: 0 0 16px rgba(255,255,255,0.12);
+    }
+    .agent-btn { display: flex; align-items: center; gap: 8px; }
+    .agent-btn img {
+      width: 26px; height: 26px;
+      border-radius: 50%;
+      object-fit: cover;
+      opacity: 0.75;
+      transition: opacity 0.2s;
+      flex-shrink: 0;
+    }
+    .agent-btn.active img, .agent-btn:hover img { opacity: 1; }
+
+    /* ── CHAT SHELL ────────────────────────────────── */
+    .chat-shell {
+      width: 100%;
+      max-width: 860px;
+      background: var(--glass);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.55);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* ── HEADER ────────────────────────────────────── */
+    .chat-header {
+      padding: 20px 24px 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .agent-dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 8px var(--accent);
+      flex-shrink: 0;
+    }
+    .chat-header h2 {
+      font-family: var(--font-head);
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      flex: 1;
+      color: var(--text);
+    }
+    /* Lock title/tag/agent-bar so light-mode bleed never affects these agents */
+    /* Friendly Bot — bright white title with red glow */
+    [data-agent="spiderman"] .chat-header h2 {
+      color: #ffffff !important;
+      text-shadow: 0 0 12px rgba(255,60,70,0.7), 0 0 24px rgba(30,60,180,0.4);
+    }
+    [data-agent="spiderman"] .chat-header .agent-tag { color: #ff4d5e !important; }
+    [data-agent="spiderman"] .agent-btn { color: #ffffff !important; }
+
+    /* Ego Bot — sharp white title with purple glow */
+    [data-agent="batman"] .chat-header h2 {
+      color: #ffffff !important;
+      text-shadow: 0 0 12px rgba(168,85,247,0.8), 0 0 28px rgba(120,40,200,0.5);
+    }
+    [data-agent="batman"] .chat-header .agent-tag { color: #c084fc !important; }
+    [data-agent="batman"] .agent-btn { color: #ffffff !important; }
+
+    /* Dark text for agent buttons in light mode */
+    [data-theme="light"] .agent-btn { color: #1a1a2e !important; }
+    [data-theme="light"] .agent-btn.active { color: #ffffff !important; }
+    .chat-header .agent-tag {
+      font-family: var(--font-head);
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: var(--accent);
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--accent);
+      border-radius: 20px;
+      padding: 3px 12px;
+    }
+
+    /* ── LAYOUT (sidebar + main) ───────────────────── */
+    .chat-body {
+      display: flex;
+      flex: 1;
+      min-height: 0;
+    }
+
+    /* ── SIDEBAR ───────────────────────────────────── */
+    .sidebar {
+      width: 190px;
+      flex-shrink: 0;
+      border-right: 1px solid var(--border);
+      padding: 14px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .side-btn {
+      width: 100%;
+      padding: 9px 12px;
+      background: var(--input-bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-family: var(--font-body);
+      font-size: 13px;
+      border-radius: 10px;
+      cursor: pointer;
+      text-align: left;
+      transition: background 0.18s;
+    }
+    .side-btn:hover { background: rgba(255,255,255,0.10); }
+    .prev-header {
+      font-family: var(--font-head);
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      color: var(--subtext);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      padding: 4px 2px;
+      text-transform: uppercase;
+    }
+    .arrow { transition: transform 180ms; display: inline-block; }
+    .arrow.open { transform: rotate(90deg); }
+    .prev-list { overflow: hidden; max-height: 0; transition: max-height 220ms ease; }
+    .prev-item {
+      padding: 8px 10px;
+      border-radius: 8px;
+      margin-top: 4px;
+      background: rgba(255,255,255,0.04);
+      font-size: 12px;
+      color: var(--subtext);
+      cursor: pointer;
+      line-height: 1.4;
+    }
+    .prev-item:hover { background: rgba(255,255,255,0.09); color: var(--text); }
+
+    /* ── CHAT WINDOW ───────────────────────────────── */
+    .chat-main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+    #chat {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      min-height: 340px;
+      max-height: 52vh;
+      scrollbar-width: thin;
+      scrollbar-color: var(--accent) transparent;
+    }
+    #chat::-webkit-scrollbar { width: 4px; }
+    #chat::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 4px; }
+
+    /* ── BUBBLES ───────────────────────────────────── */
+    .bubble-row {
+      display: flex;
+      align-items: flex-end;
+      gap: 8px;
+      animation: fadeUp 0.22s ease both;
+    }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .bubble-row.user { flex-direction: row-reverse; }
+
+    .avatar {
+      width: 30px; height: 30px;
+      border-radius: 50%;
+      background: var(--accent);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px;
+      flex-shrink: 0;
+      font-weight: 700;
+    }
+    .bubble-row.bot .avatar { background: var(--bot-bubble); border: 1px solid var(--border); }
+
+    .bubble {
+      max-width: 72%;
+      padding: 10px 15px;
+      border-radius: 16px;
+      font-size: 14px;
+      line-height: 1.6;
+      word-break: break-word;
+    }
+    .bubble-row.user .bubble {
+      background: var(--user-bubble);
+      border-radius: 16px 16px 4px 16px;
+      color: #fff;
+    }
+    .bubble-row.bot .bubble {
+      background: var(--bot-bubble);
+      border: 1px solid var(--border);
+      border-radius: 16px 16px 16px 4px;
+      color: var(--text);
+    }
+
+    /* Typing dots */
+    .typing-dots span {
+      display: inline-block;
+      width: 6px; height: 6px;
+      background: var(--subtext);
+      border-radius: 50%;
+      animation: bounce 1.2s infinite;
+      margin: 0 2px;
+    }
+    .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes bounce {
+      0%,80%,100% { transform: translateY(0); }
+      40% { transform: translateY(-6px); }
+    }
+
+    /* ── INPUT ROW ─────────────────────────────────── */
+    .input-row {
+      display: flex;
+      gap: 10px;
+      padding: 14px 20px;
+      border-top: 1px solid var(--border);
+      background: rgba(0,0,0,0.20);
+    }
+    #msg {
+      flex: 1;
+      padding: 12px 16px;
+      font-size: 14px;
+      font-family: var(--font-body);
+      background: var(--input-bg);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      outline: none;
+      transition: border-color 0.18s;
+    }
+    #msg:focus { border-color: var(--accent); }
+    #msg::placeholder { color: var(--subtext); }
+    #sendBtn {
+      padding: 12px 22px;
+      font-size: 14px;
+      font-family: var(--font-head);
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: opacity 0.18s, transform 0.12s;
+    }
+    #sendBtn:hover { opacity: 0.88; transform: translateY(-1px); }
+    #sendBtn:active { transform: translateY(0); }
+
+    /* ── THEME TOGGLE ──────────────────────────────── */
+    .theme-toggle {
+      position: fixed;
+      top: 14px; left: 14px;
+      z-index: 100;
+    }
+    .theme-toggle input { display: none; }
+    .switch {
+      display: flex; align-items: center;
+      width: 74px; height: 32px;
+      border-radius: 999px;
+      background: rgba(0,0,0,0.45);
+      border: 1px solid var(--border);
+      backdrop-filter: blur(8px);
+      cursor: pointer;
+      position: relative;
+      padding: 3px;
+    }
+    .switch .sun, .switch .moon {
+      font-size: 13px; width: 22px; text-align: center; z-index: 1; user-select: none;
+    }
+    .switch .moon { margin-left: auto; }
+    .switch .knob {
+      position: absolute; left: 4px; top: 3px;
+      width: 26px; height: 26px;
+      background: var(--accent);
+      border-radius: 50%;
+      transition: transform 0.18s ease;
+    }
+    input:checked + .switch .knob { transform: translateX(38px); }
+  </style>
+</head>
+
+<body>
+
+<!-- Theme toggle (normal agent only, hidden for others) -->
+<div class="theme-toggle" id="themeToggleWrap">
+  <input type="checkbox" id="theme" />
+  <label for="theme" class="switch">
+    <span class="sun">☀️</span>
+    <span class="knob"></span>
+    <span class="moon">🌙</span>
+  </label>
+</div>
+
+<!-- Agent selector -->
+<div class="agent-bar">
+  <button class="agent-btn active" data-agent="normal">⚡ Normal</button>
+  <button class="agent-btn" data-agent="spiderman"><img src="/static/friendly.png" alt="Friendly Bot"> Friendly Bot</button>
+  <button class="agent-btn" data-agent="batman"><img src="/static/ego.png" alt="Ego Bot"> Ego Bot</button>
+</div>
+
+<!-- Chat shell -->
+<div class="chat-shell">
+
+  <!-- Header -->
+  <div class="chat-header">
+    <div class="agent-dot"></div>
+    <h2 id="botTitle">Your Friendly Neighbourhood Chatbot</h2>
+    <span class="agent-tag" id="agentTag">NORMAL</span>
+  </div>
+
+  <div class="chat-body">
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <button id="newChat" class="side-btn">＋ New Chat</button>
+      <div class="prev-header" id="prevToggle">
+        <span>History</span>
+        <span class="arrow" id="prevArrow">▶</span>
+      </div>
+      <div class="prev-list" id="prevList"></div>
+    </aside>
+
+    <!-- Main chat -->
+    <div class="chat-main">
+      <div id="chat"></div>
+      <div class="input-row">
+        <input id="msg" placeholder="Type a message…" autocomplete="off" />
+        <button id="sendBtn">Send</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ── STATE ──────────────────────────────────────────
+let currentAgent = 'normal';
+let messages = [];
+
+const AGENT_CONFIG = {
+  normal: {
+    title: name => name ? `Hello ${name}, I'm your assistant` : 'Your Assistant',
+    tag: 'NORMAL',
+    avatar: '🤖',
+  },
+  spiderman: {
+    title: name => name ? `Hey ${name}! Friendly Bot here 🕷` : 'Friendly Bot 🕷',
+    tag: 'FRIENDLY BOT',
+    avatar: '🕷',
+  },
+  batman: {
+    title: name => name ? `${name}. Focus. Let's talk.` : 'Ego Bot',
+    tag: 'EGO BOT',
+    avatar: '🦇',
+  },
+};
+
+const savedName = localStorage.getItem('chatName');
+
+// ── AGENT SWITCH ───────────────────────────────────
+function switchAgent(agent) {
+  // Save current chat before switching
+  if (messages.length) saveChatToStorage(messages, currentAgent);
+
+  currentAgent = agent;
+  messages = [];
+
+  // Update UI theme
+  document.documentElement.dataset.agent = agent;
+
+  // Show/hide theme toggle (only for normal agent)
+  document.getElementById('themeToggleWrap').style.display = agent === 'normal' ? '' : 'none';
+
+  // Update header
+  const cfg = AGENT_CONFIG[agent];
+  document.getElementById('botTitle').textContent = cfg.title(savedName);
+  document.getElementById('agentTag').textContent = cfg.tag;
+
+  // Update active button
+  document.querySelectorAll('.agent-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.agent === agent);
+  });
+
+  // Clear chat
+  document.getElementById('chat').innerHTML = '';
+  renderSavedList();
+}
+
+document.querySelectorAll('.agent-btn').forEach(btn => {
+  btn.addEventListener('click', () => switchAgent(btn.dataset.agent));
+});
+
+// ── SEND MESSAGE ───────────────────────────────────
+async function send() {
+  const input = document.getElementById('msg');
+  const text = input.value.trim();
+  if (!text) { input.focus(); return; }
+
+  addBubble('user', text);
+  messages.push({ role: 'user', content: text });
+  input.value = '';
+  input.focus();
+
+  // Typing indicator
+  const typingId = 'typing-' + Date.now();
+  addTyping(typingId);
+
+  try {
+    const res = await fetch('/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: text, agent: currentAgent }),
+    });
+    const data = await res.json();
+    removeTyping(typingId);
+    const reply = data.reply || '';
+    addBubble('bot', reply);
+    messages.push({ role: 'assistant', content: reply });
+  } catch {
+    removeTyping(typingId);
+    addBubble('bot', '(error) Could not reach server.');
+  }
+}
+
+// ── BUBBLE HELPERS ─────────────────────────────────
+function addBubble(role, text) {
+  const chat = document.getElementById('chat');
+  const cfg = AGENT_CONFIG[currentAgent];
+
+  const row = document.createElement('div');
+  row.className = `bubble-row ${role}`;
+
+  const av = document.createElement('div');
+  av.className = 'avatar';
+  av.textContent = role === 'user' ? (savedName ? savedName[0].toUpperCase() : '👤') : cfg.avatar;
+
+  const bub = document.createElement('div');
+  bub.className = 'bubble';
+  bub.textContent = text;
+
+  if (role === 'user') {
+    row.appendChild(bub);
+    row.appendChild(av);
+  } else {
+    row.appendChild(av);
+    row.appendChild(bub);
+  }
+
+  chat.appendChild(row);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+function addTyping(id) {
+  const chat = document.getElementById('chat');
+  const cfg = AGENT_CONFIG[currentAgent];
+
+  const row = document.createElement('div');
+  row.className = 'bubble-row bot';
+  row.id = id;
+
+  const av = document.createElement('div');
+  av.className = 'avatar';
+  av.textContent = cfg.avatar;
+
+  const bub = document.createElement('div');
+  bub.className = 'bubble typing-dots';
+  bub.innerHTML = '<span></span><span></span><span></span>';
+
+  row.appendChild(av);
+  row.appendChild(bub);
+  chat.appendChild(row);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+function removeTyping(id) {
+  const el = document.getElementById(id);
+  if (el) el.remove();
+}
+
+// ── KEYBOARD ───────────────────────────────────────
+document.getElementById('msg').addEventListener('keydown', e => {
+  if (e.key === 'Enter') { e.preventDefault(); send(); }
+});
+document.getElementById('sendBtn').addEventListener('click', send);
+
+// ── THEME TOGGLE ───────────────────────────────────
+const themeCheckbox = document.getElementById('theme');
+function applyTheme(t) {
+  if (t === 'light') document.documentElement.setAttribute('data-theme', 'light');
+  else document.documentElement.removeAttribute('data-theme');
+}
+// unchecked = ☀️ light, checked = 🌙 dark
+const savedTheme = localStorage.getItem('theme') || 'dark';
+if (savedTheme === 'dark') { themeCheckbox.checked = true; applyTheme('dark'); }
+else { themeCheckbox.checked = false; applyTheme('light'); }
+themeCheckbox.addEventListener('change', () => {
+  const t = themeCheckbox.checked ? 'dark' : 'light';
+  localStorage.setItem('theme', t);
+  applyTheme(t);
+});
+
+// ── CHAT HISTORY ───────────────────────────────────
+function getSavedChats() {
+  try { return JSON.parse(localStorage.getItem('savedChats') || '[]'); } catch { return []; }
+}
+function saveChatToStorage(chat, agent) {
+  if (!chat || !chat.length) return;
+  const all = getSavedChats();
+  const title = chat[0]?.content?.slice(0, 38) || 'Chat';
+  all.unshift({ id: Date.now(), messages: chat.slice(), title, agent });
+  localStorage.setItem('savedChats', JSON.stringify(all.slice(0, 50)));
+  renderSavedList();
+}
+function renderSavedList() {
+  const list = document.getElementById('prevList');
+  const all = getSavedChats().filter(c => c.agent === currentAgent);
+  list.innerHTML = '';
+  all.forEach((c, idx) => {
+    const d = document.createElement('div');
+    d.className = 'prev-item';
+    d.textContent = c.title + ' — ' + new Date(c.id).toLocaleTimeString();
+    d.addEventListener('click', () => loadChat(c));
+    list.appendChild(d);
+  });
+}
+function loadChat(chatData) {
+  messages = chatData.messages.slice();
+  const chat = document.getElementById('chat');
+  chat.innerHTML = '';
+  messages.forEach(m => addBubble(m.role === 'user' ? 'user' : 'bot', m.content));
+}
+function newChat() {
+  if (messages.length) saveChatToStorage(messages, currentAgent);
+  messages = [];
+  document.getElementById('chat').innerHTML = '';
+}
+document.getElementById('newChat').addEventListener('click', newChat);
+
+// ── PREV TOGGLE ────────────────────────────────────
+const prevToggle = document.getElementById('prevToggle');
+const prevList   = document.getElementById('prevList');
+const prevArrow  = document.getElementById('prevArrow');
+let prevOpen = false;
+prevToggle.addEventListener('click', () => {
+  prevOpen = !prevOpen;
+  prevList.style.maxHeight = prevOpen ? '300px' : '0';
+  prevArrow.classList.toggle('open', prevOpen);
+});
+
+// ── INIT ───────────────────────────────────────────
+switchAgent('normal');
+</script>
+</body>
+</html>

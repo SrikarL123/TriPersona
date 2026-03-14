@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Start TriPersona</title>
+<style>
+body{
+  margin:0;
+  height:100vh;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  background-color:black;
+  background-image:url("/static/start.png");
+  background-position:center;
+  background-size:cover;
+  background-repeat:no-repeat;
+  background-attachment:fixed;
+  color:white;
+  font-family:Arial;
+}
+.box{
+  text-align:center;
+  background:rgba(0,0,0,0.65);
+  padding:40px;
+  border-radius:14px;
+  backdrop-filter: blur(8px);
+}
+input{
+  padding:14px;
+  margin-top:20px;
+  width:260px;
+  background:#111;
+  border:1px solid #333;
+  color:white;
+  border-radius:8px;
+}
+button{
+  margin-top:14px;
+  width:100%;
+  padding:12px;
+  opacity:0.5;
+  cursor:not-allowed;
+  background:#1a1a1a;
+  color:white;
+  border:1px solid #333;
+  border-radius:8px;
+  font-size:15px;
+}
+button.active{
+  opacity:1;
+  cursor:pointer;
+  background:#1a73e8;
+  border-color:#1a73e8;
+}
+</style>
+</head>
+<body>
+
+<div class="box">
+  <h2>Please enter your name</h2>
+  <input id="nameInput" placeholder="Your name..." autocomplete="off"/>
+  <button id="startBtn" disabled>Enter the TriPersona</button>
+</div>
+
+<script>
+  const nameInput = document.getElementById("nameInput");
+  const startBtn  = document.getElementById("startBtn");
+
+  nameInput.addEventListener("input", () => {
+    const hasText = nameInput.value.trim().length > 0;
+    startBtn.disabled = !hasText;
+    startBtn.classList.toggle("active", hasText);
+  });
+
+  async function start() {
+    const name = nameInput.value.trim();
+    if (!name) return;
+
+    localStorage.setItem("chatName", name);
+
+    // POST to Flask backend — which saves to Firebase with name as key
+    try {
+      const res = await fetch("/save-user", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: name })
+      });
+      const data = await res.json();
+      console.log("✅ Server response:", data.status);
+    } catch (err) {
+      console.warn("⚠️ Save request failed:", err.message);
+    }
+
+    window.location.href = "/chatbot";
+  }
+
+  startBtn.addEventListener("click", start);
+  nameInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && !startBtn.disabled) start();
+  });
+</script>
+
+</body>
+</html>
