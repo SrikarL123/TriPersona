@@ -126,7 +126,7 @@ def firebase_config_js():
   storageBucket:     "{os.environ.get('FIREBASE_STORAGE_BUCKET')}",
   messagingSenderId: "{os.environ.get('FIREBASE_MESSAGING_SENDER_ID')}",
   appId:             "{os.environ.get('FIREBASE_APP_ID')}"
-}};"""
+}};
     return Response(config, mimetype="application/javascript")
 
 @app.route("/")
