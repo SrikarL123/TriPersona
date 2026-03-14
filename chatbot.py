@@ -3,6 +3,8 @@ from groq import Groq
 from dotenv import load_dotenv
 import os
 import re
+from zoneinfo import ZoneInfo
+from datetime import datetime
 
 load_dotenv()
 
@@ -105,27 +107,29 @@ MAX_MESSAGES = 25
 
 @app.route("/status")
 def status():
-    """Debug route — check Firebase status."""
+    service_account_path = os.environ.get(
+        "FIREBASE_SERVICE_ACCOUNT_PATH",
+        "/etc/secrets/serviceAccountKey.json"
+    )
+
     return jsonify({
         "firebase_ready": firebase_ready,
         "firebase_error": firebase_error,
         "database_url": os.environ.get("FIREBASE_DATABASE_URL"),
-        "service_account_path": os.environ.get("FIREBASE_SERVICE_ACCOUNT_PATH", "serviceAccountKey.json"),
-        "service_account_exists": os.path.exists(
-            os.environ.get("FIREBASE_SERVICE_ACCOUNT_PATH", "serviceAccountKey.json")
-        )
+        "service_account_path": service_account_path,
+        "service_account_exists": os.path.exists(service_account_path)
     })
 
 @app.route("/firebase-config.js")
 def firebase_config_js():
     config = f"""export const firebaseConfig = {{
-  apiKey:            "{os.environ.get('FIREBASE_API_KEY')}",
-  authDomain:        "{os.environ.get('FIREBASE_AUTH_DOMAIN')}",
-  databaseURL:       "{os.environ.get('FIREBASE_DATABASE_URL')}",
-  projectId:         "{os.environ.get('FIREBASE_PROJECT_ID')}",
-  storageBucket:     "{os.environ.get('FIREBASE_STORAGE_BUCKET')}",
+  apiKey: "{os.environ.get('FIREBASE_API_KEY')}",
+  authDomain: "{os.environ.get('FIREBASE_AUTH_DOMAIN')}",
+  databaseURL: "{os.environ.get('FIREBASE_DATABASE_URL')}",
+  projectId: "{os.environ.get('FIREBASE_PROJECT_ID')}",
+  storageBucket: "{os.environ.get('FIREBASE_STORAGE_BUCKET')}",
   messagingSenderId: "{os.environ.get('FIREBASE_MESSAGING_SENDER_ID')}",
-  appId:             "{os.environ.get('FIREBASE_APP_ID')}"
+  appId: "{os.environ.get('FIREBASE_APP_ID')}"
 }};
     return Response(config, mimetype="application/javascript")
 
@@ -152,11 +156,9 @@ def save_user():
         if not name:
             return jsonify({"status": "error", "message": "No name provided"}), 400
 
-        started_at = datetime.utcnow().isoformat() + "Z"
+        started_at = datetime.now(ZoneInfo("Asia/Kolkata")).strftime("%Y-%m-%d %H:%M:%S IST")
 
         ref = firebase_db.reference("users").push()
-
-        started_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
         ref.set({
             "name": name,
