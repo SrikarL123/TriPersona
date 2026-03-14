@@ -3,6 +3,7 @@
 A multi-persona AI chatbot with three distinct personalities, built with Flask, Groq (LLaMA 3.1), and Firebase.
 
 🌐 **Live Demo:** [tripersona.onrender.com](https://tripersona.onrender.com)
+💼 **LinkedIn Post:** [View on LinkedIn](https://www.linkedin.com/feed/update/urn:li:activity:7438602345040572416/)
 
 ![TriPersona](static/start.png)
 
@@ -25,7 +26,7 @@ A multi-persona AI chatbot with three distinct personalities, built with Flask, 
 ## ✨ Features
 
 - Three AI personas with separate conversation memory per session
-- User name saved to Firebase on entry
+- User name + timestamp saved to Firebase Realtime Database on every visit — real user tracking out of the box
 - Bounded conversation history (max 25 messages per agent)
 - Clean, dark-themed UI with background theming per persona
 - Deployable on Render with environment-based Firebase credentials
