@@ -175,7 +175,7 @@ def chat():
             history.pop(1)
 
         response = client.chat.completions.create(
-            model="llama-3.1-8b-instant",
+            model="openai/gpt-oss-20b",
             messages=history,
             max_tokens=200
         )
