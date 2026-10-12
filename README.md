@@ -1,216 +1,129 @@
-# TriPersona — Multi-Personality AI Chatbot
+# TriPersona — Multi-Persona AI Chatbot 🤖
 
-An AI-powered multi-personality chatbot built with **Flask, Groq, Retrieval-Augmented Generation (RAG), and Neon PostgreSQL**.
+**TriPersona** is an AI-powered chatbot that lets users interact with three distinct AI personalities, maintain chat history, and ask questions about their own documents using Retrieval-Augmented Generation (RAG).
 
-🚀 **Live Application: [https://tripersona.onrender.com/](https://tripersona.onrender.com/)**
-
-TriPersona lets users interact with three distinct AI personalities, maintain persistent chat histories, and ask questions grounded in uploaded documents using a RAG pipeline.
+🌐 **Live Demo:** https://tripersona.onrender.com/
 
 ## ✨ Features
 
-- 🤖 **Three AI Personalities** — Normal, Friendly, and Ego
-- 👤 User registration, login, and logout
-- 🔐 Secure password hashing
-- 🔒 Application-level encryption for chat titles and messages
-- 💬 Persistent chat history backed by Neon PostgreSQL
-- 📄 PDF and DOCX document uploads
-- 🔎 RAG-based document question answering
-- 📚 Multiple-document support
-- 🧠 Conversation-aware query rewriting
-- 📑 Document source and page metadata where available
-- 🗑️ Chat deletion
-- 🌗 Dark and light modes
-- 🎨 Animated Acid Squares WebGL background
-- ⚡ Optimized chat switching and history loading
-- ☁️ Cloud deployment using Render and Gunicorn
+### 🧠 Three AI Personalities
 
-## 🚀 Try TriPersona
+Switch between three conversational styles:
 
-**[Open the Live Application →](https://tripersona.onrender.com/)**
+- **Normal** — Balanced, helpful, and informative responses.
+- **Friendly Spider-Man** — A friendly, humorous, superhero-inspired conversational style.
+- **Ego Batman** — A confident, dark, and assertive conversational style.
 
-Create an account or sign in to explore the different AI personalities, start conversations, and upload supported documents to ask context-aware questions.
+Each personality provides a different conversational experience.
 
-## 🧠 AI Personalities
+### 🔐 User Authentication & Security
 
-### Normal
-A straightforward, professional assistant focused on clear, accurate, and useful answers.
+- User registration and login.
+- Secure session management and logout.
+- Persistent chat history associated with user accounts.
+- Encrypted chat messages using Fernet encryption.
+- Password visibility toggles on sign-in and account creation forms, including password confirmation.
 
-### Friendly
-A casual, conversational assistant that delivers concise responses with a relaxed tone.
+### 📄 Document-Based Q&A (RAG)
 
-### Ego
-A strategic, serious personality inspired by competitive and analytical thinking.
+Upload documents and ask questions about their contents.
 
-## 🏗️ Architecture
+- Supports **PDF and DOCX** files.
+- Handles multiple documents.
+- Retrieves relevant document chunks to answer questions.
+- Uses query rewriting to improve retrieval.
+- Provides source and page metadata where available.
+- Supports document management, including deletion.
 
-```text
-                    User Browser
-                         |
-                         v
-                  Frontend Interface
-                  HTML / CSS / JS
-                         |
-                         v
-                    Flask App
-                backend/chatbot.py
-                         |
-             +-----------+-----------+
-             |           |           |
-             v           v           v
-          Groq API   RAG Pipeline   Neon
-          LLMs       Retrieval      PostgreSQL
-                         |
-                         v
-                  FastEmbed / ONNX
-                  Vector Similarity
-```
+### 💬 Chat Management
 
-### Technology Stack
+- Persistent conversation history.
+- Retrieve previous conversations.
+- Delete conversations when no longer needed.
+- Ask follow-up questions within a conversation.
 
-| Component | Technology |
+### 🎨 Modern User Interface
+
+- Animated **Acid Squares** background on the landing page.
+- Interactive sign-in and account creation forms.
+- Eye and crossed-eye icons for showing or hiding passwords.
+- Dark/light mode support in the chat interface.
+- Character-themed visuals and a responsive chat experience.
+
+## 🛠️ Tech Stack
+
+| Category | Technologies |
 |---|---|
-| Backend | Python, Flask, Gunicorn |
-| AI inference | Groq API |
-| Language models | Groq-supported LLMs |
+| Backend | Python, Flask |
+| AI Inference | Groq API |
+| Language Model | `openai/gpt-oss-120b` by default |
 | Database | Neon PostgreSQL |
-| Database driver | Psycopg |
-| RAG framework | LangChain |
-| Embeddings | FastEmbed |
-| Inference runtime | ONNX Runtime |
-| Document processing | PyMuPDF, docx2txt |
+| Authentication | Flask-based authentication and session management |
+| Encryption | Fernet |
+| RAG | Retrieval-Augmented Generation |
+| Embeddings | FastEmbed, ONNX Runtime |
+| Embedding Model | `BAAI/bge-small-en-v1.5` |
+| Document Processing | PDF and DOCX loaders |
 | Frontend | HTML, CSS, JavaScript |
-| Visual effects | WebGL |
-| Deployment | Render |
+| Background Animation | WebGL / Acid Squares |
+| Deployment | Render, Gunicorn |
+| Version Control | Git and GitHub |
 
-## 🔎 Retrieval-Augmented Generation (RAG)
-
-TriPersona uses RAG to answer questions using information retrieved from uploaded documents.
-
-```text
-User Question
-      |
-      v
-Conversation-Aware Query Rewriting
-      |
-      v
-Section / Intent Detection
-      |
-      v
-Document Retrieval
-      |
-      v
-Vector Similarity Search
-      |
-      v
-Relevant Document Chunks
-      |
-      v
-Groq Language Model
-      |
-      v
-Context-Aware Answer
-```
-
-### Supported Documents
-
-- PDF (`.pdf`)
-- Microsoft Word (`.docx`)
-
-The document-processing pipeline extracts content, splits it into chunks, generates embeddings, and retrieves relevant information for question answering.
-
-## 📁 Project Structure
+## 🏗️ Project Structure
 
 ```text
 TriPersona/
-│
 ├── backend/
 │   ├── chatbot.py
 │   ├── auth.py
-│   ├── creator_profile.py
 │   ├── database.py
 │   └── encryption.py
-│
 ├── frontend/
 │   ├── start.html
 │   └── chat.html
-│
 ├── rag/
-│   ├── __init__.py
 │   ├── embeddings.py
 │   ├── loaders.py
 │   ├── retriever.py
 │   ├── splitter.py
 │   └── vectorstore.py
-│
 ├── static/
 │   ├── acidsquares.js
-│   └── ...
-│
-├── uploads/                 # Generated / local data
-├── vector_store/            # Generated / local data
-│
+│   └── character images and other assets
+├── uploads/
+├── vector_store/
 ├── requirements.txt
-├── requirements_torch_free.txt
-├── .env.example
-├── .gitignore
 └── README.md
 ```
 
-The `uploads/` and `vector_store/` directories contain local or generated data and should not be committed to GitHub.
+*The directory listing represents the main project components; filenames and optional assets may vary by your current repository.*
 
-## 🔐 Authentication and Chat Security
-
-TriPersona supports user registration, login, logout, persistent accounts, and chat-history retrieval.
-
-Passwords are stored using password hashing rather than plaintext storage.
-
-Chat titles and messages are encrypted before being stored in PostgreSQL using Fernet symmetric encryption.
-
-The encryption key is configured through the `CHAT_ENCRYPTION_KEY` environment variable.
-
-**Important:** Keep the encryption key private. Existing encrypted chat data may become unreadable if the key is changed. Preserve the existing production key when updating or redeploying the application.
-
-## 🗄️ Database
-
-TriPersona uses **Neon PostgreSQL** for persistent application data.
-
-The database includes tables for:
-
-- **Users:** Account details, password hashes, and login metadata
-- **Chats:** Chat ownership, encrypted titles, personality selection, and timestamps
-- **Messages:** Message roles, encrypted content, and timestamps
-
-Chat histories are associated with individual user accounts. The application retrieves and decrypts the appropriate history after authentication.
-
-## 🛠️ Getting Started Locally
-
-### Prerequisites
-
-- Python 3.10 or a compatible version supported by the installed dependencies
-- pip
-- A Groq API key
-- A Neon PostgreSQL database
+## ⚙️ Getting Started
 
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/SrikarL123/TriPersona.git
+git clone <YOUR_GITHUB_REPOSITORY_URL>
 cd TriPersona
 ```
 
+Replace `<YOUR_GITHUB_REPOSITORY_URL>` with your repository's Git URL.
+
 ### 2. Create a virtual environment
 
-**Windows PowerShell**
-
-```powershell
+```bash
 python -m venv .venv
-.\.venv\Scripts\Activate.ps1
 ```
 
-**Linux / macOS**
+Activate it on Windows:
+
+```powershell
+.venv\Scripts\Activate.ps1
+```
+
+On macOS or Linux:
 
 ```bash
-python3 -m venv .venv
 source .venv/bin/activate
 ```
 
@@ -222,164 +135,115 @@ pip install -r requirements.txt
 
 ### 4. Configure environment variables
 
-Create a `.env` file in the repository root using `.env.example` as a template.
-
-Configure the following variables:
+Create a `.env` file in the project root if your local setup uses `python-dotenv`, or configure these variables in your environment.
 
 ```env
 GROQ_API_KEY=your_groq_api_key
 GROQ_MODEL=openai/gpt-oss-120b
-
-DATABASE_URL=your_neon_database_url
-
+DATABASE_URL=your_neon_postgresql_connection_string
 FLASK_SECRET_KEY=your_flask_secret_key
 CHAT_ENCRYPTION_KEY=your_fernet_encryption_key
 
 EMBEDDING_MODEL=BAAI/bge-small-en-v1.5
 HF_HUB_DISABLE_SYMLINKS_WARNING=1
-
 HOST=0.0.0.0
 PORT=5000
 ```
 
-Use valid values for your own environment. Never commit the real `.env` file to GitHub.
+Optional:
 
-### 5. Start the application
+```env
+HF_TOKEN=your_hugging_face_token
+```
 
-From the repository root, run:
+**Important:**
+- Never commit your `.env` file, API keys, database credentials, or encryption keys to GitHub.
+- Generate a strong, unique Flask secret key.
+- Use a valid Fernet-compatible key for `CHAT_ENCRYPTION_KEY`.
+- Keep your encryption key secure. Losing it may prevent previously encrypted messages from being decrypted.
+- Ensure your Neon PostgreSQL database is configured and accessible.
+
+### 5. Run the application locally
+
+From the project root, run:
 
 ```bash
 python backend/chatbot.py
 ```
 
-Then open:
+If your application is configured to load environment variables or files relative to the repository root, keep the working directory at the project root.
 
-**http://localhost:5000**
+Open the local address printed by Flask in your terminal, commonly:
 
-If you use a different working directory or startup method, make sure the application can resolve the root-level `rag/`, `static/`, and `frontend/` directories.
+```text
+http://127.0.0.1:5000
+```
 
-## 🔑 Generating Security Keys
+## ☁️ Deployment on Render
 
-### Flask Secret Key
+TriPersona is deployed using Render and Gunicorn.
 
-Generate a new Flask secret key for a new installation:
+### Build command
 
 ```bash
-python -c "import secrets; print(secrets.token_hex(32))"
+pip install -r requirements.txt
 ```
 
-Set the generated value as `FLASK_SECRET_KEY`.
-
-### Fernet Encryption Key
-
-Generate a Fernet key for a new installation:
+### Start command
 
 ```bash
-python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+gunicorn --chdir backend --timeout 120 chatbot:app
 ```
 
-Set the generated value as `CHAT_ENCRYPTION_KEY`.
+Add the required environment variables under your Render service's **Environment** settings.
 
-**Do not generate a replacement encryption key for an existing production database.** Existing encrypted messages and titles depend on the original key unless a deliberate migration is performed.
+At minimum, configure:
 
-## ☁️ Deployment
+- `GROQ_API_KEY`
+- `GROQ_MODEL`
+- `DATABASE_URL`
+- `FLASK_SECRET_KEY`
+- `CHAT_ENCRYPTION_KEY`
+- `EMBEDDING_MODEL`
 
-TriPersona is deployed using Render, with Neon PostgreSQL providing persistent database storage.
+Add any other environment variables required by your current configuration.
 
-- **Live application:** [https://tripersona.onrender.com/](https://tripersona.onrender.com/)
-- **GitHub repository:** [https://github.com/SrikarL123/TriPersona](https://github.com/SrikarL123/TriPersona)
+**Live application:** https://tripersona.onrender.com/
 
-The production environment requires the relevant secrets to be configured in Render's environment settings.
+> **Deployment note:** Local uploads and generated vector-store files may not persist across deployments or ephemeral filesystem changes on Render. Persistent storage or an appropriate external storage solution may be needed if uploaded documents must remain available.
 
-### Render Configuration
+## 🔒 Security Notes
 
-The application uses a Python dependency installation step and Gunicorn to serve Flask.
+- Store secrets in environment variables, not source code.
+- Never push uploaded private documents or user data to a public repository.
+- Exclude `.env`, virtual environments, cache files, and generated data from Git.
+- Use HTTPS in production.
+- Restrict access to private chat data and uploaded documents.
+- Protect and back up encryption keys securely.
 
-For the reorganized project layout, the startup command should point Gunicorn to the backend module while preserving the repository root for the `rag/`, `static/`, and `frontend/` directories.
-
-Keep the existing Neon connection string and encryption key unchanged when updating the deployment.
-
-## 🔒 GitHub Security
-
-The following files and directories should be excluded from version control:
-
-```gitignore
-.env
-.venv/
-.venv-*/
-venv/
-__pycache__/
-*.pyc
-*.log
-uploads/
-vector_store/
-test_vector_store/
-```
-
-Never commit:
-
-- Groq API keys
-- Neon database credentials
-- Flask secret keys
-- Fernet encryption keys
-- Real `.env` files
-- Private uploaded documents
-- Generated vector stores
-- Local virtual environments
-
-Only placeholder configuration should be included in `.env.example`.
-
-## ☁️ Storage Considerations
-
-Neon PostgreSQL provides persistent storage for user accounts and chat data.
-
-Uploaded documents and generated vector stores currently use local directories. These files should not be assumed to survive Render restarts or deployments unless persistent storage is configured separately.
-
-If long-term document retention is required, configure suitable persistent disk or external object storage and ensure the retrieval pipeline can access the stored files.
-
-## 🧪 Testing Checklist
-
-Before deploying changes, verify the following.
-
-- [ ] User registration and login work
-- [ ] Incorrect credentials are rejected
-- [ ] Logout works correctly
-- [ ] All three personalities respond as expected
-- [ ] New conversations can be created
-- [ ] Existing chat histories load correctly
-- [ ] Chat deletion works
-- [ ] Chat titles and messages decrypt correctly
-- [ ] PDF uploads work
-- [ ] DOCX uploads work
-- [ ] Multiple documents can be queried
-- [ ] Relevant document content is retrieved
-- [ ] The application starts successfully on Render
-- [ ] Existing Neon data remains accessible
-
-## 🔮 Future Improvements
+## 🚀 Future Improvements
 
 Potential areas for future development include:
 
-- Persistent cloud storage for uploaded documents
-- Persistent cloud vector storage
-- Streaming AI responses
-- Additional personality configurations
-- User profile management
-- Password reset functionality
-- Rate limiting and abuse prevention
-- Enhanced document management
-- Production monitoring and logging
-- Custom domain support
-- Improved client-side privacy and encryption architecture
+- More AI personalities and customization options.
+- Improved document retrieval and response citations.
+- Better persistence for uploaded files and vector stores.
+- Streaming AI responses.
+- Enhanced chat search and organization.
+- Additional accessibility and mobile UI improvements.
+
+## 👨‍💻 Creator
+
+**Srikar Lokai**
+
+AI applications, backend development, and data-driven software projects.
+
+📧 Contact: srikar0912@gmail.com
 
 ## 📄 License
 
-This project is currently intended for portfolio and demonstration purposes. Add a formal open-source license if you intend to permit reuse, modification, and redistribution.
+Add a `LICENSE` file to the repository if you intend to distribute this project under an open-source license. Until then, do not assume the project is licensed for reuse.
 
-## 👨‍💻 Project
+---
 
-**TriPersona — Multi-Personality AI Chatbot**
-
-Built with Python, Flask, Groq, LangChain, FastEmbed, ONNX Runtime, NumPy, PostgreSQL, Neon, JavaScript, and WebGL.
-
-**Try it live: [tripersona.onrender.com](https://tripersona.onrender.com/)**
+**TriPersona — Three personalities. One AI experience.** 🤖
