@@ -1,13 +1,24 @@
-from flask import Flask, request, jsonify, send_file, session
-from groq import Groq
-from dotenv import load_dotenv
 import os
+import sys
 import uuid
 import re
 import shutil
 import json
 from concurrent.futures import ThreadPoolExecutor
 import logging
+
+from flask import Flask, request, jsonify, send_file, session
+from groq import Groq
+from dotenv import load_dotenv
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT = os.path.dirname(BASE_DIR)
+
+if BASE_DIR not in sys.path:
+    sys.path.insert(0, BASE_DIR)
+if PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, PROJECT_ROOT)
+
 from auth import register_user, login_user, logout_user, get_current_user
 from database import create_tables, get_user_chats, get_chat_messages, delete_chat, save_exchange
 
@@ -19,26 +30,26 @@ from creator_profile import CREATOR_PROFILE
 
 
 load_dotenv()
+os.environ.setdefault("HF_HUB_DISABLE_SYMLINKS_WARNING", "1")
 
-
-app = Flask(__name__)
-
-app.secret_key = os.getenv("FLASK_SECRET_KEY")
-create_tables()
-
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-UPLOAD_DIR = os.path.join(BASE_DIR, "uploads")
-VECTOR_DIR = os.path.join(BASE_DIR, "vector_store")
+STATIC_DIR = os.path.join(PROJECT_ROOT, "static")
+FRONTEND_DIR = os.path.join(PROJECT_ROOT, "frontend")
+UPLOAD_DIR = os.path.join(PROJECT_ROOT, "uploads")
+VECTOR_DIR = os.path.join(PROJECT_ROOT, "vector_store")
 DOCUMENT_REGISTRY_FILE = os.path.join(VECTOR_DIR, "document_registry.json")
 
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 os.makedirs(VECTOR_DIR, exist_ok=True)
 
+app = Flask(__name__, static_folder=STATIC_DIR, static_url_path="/static")
+app.secret_key = os.getenv("FLASK_SECRET_KEY")
+create_tables()
+
 ALLOWED_EXTENSIONS = {".pdf", ".docx"}
 MAX_FILE_SIZE = 10 * 1024 * 1024
 
 client = Groq(api_key=os.getenv("GROQ_API_KEY"))
-MODEL = "openai/gpt-oss-120b"
+MODEL = os.getenv("GROQ_MODEL", "openai/gpt-oss-120b")
 
 # Persist Neon writes after the response is ready so DB latency does not
 # block the user from seeing the AI reply. Each worker uses its own DB connection.
@@ -63,6 +74,7 @@ Do not use roleplay, emojis, or character catchphrases.
 Explain complicated concepts clearly and simply.
 
 Prioritize correctness and relevance.
+When an attached document is present, directly use the document context to answer questions accurately.
 If you are uncertain, say so rather than guessing.""",
 
     "spiderman": """You are Friendly Bot, a Spider-Man-inspired AI assistant.
@@ -72,26 +84,21 @@ three sentences and under 60 words. Start with a cool, funny reaction such as
 "Is that really necessary?", "Okay, detective mode activated", or a playful
 observation when it fits, then give only the most useful answer.
 
-For uploaded PDFs and documents, never write a formal summary, profile, report,
-skill list, or long explanation. Give one or two useful facts in a casual,
-funny way and offer to go deeper if the user wants. Do not dump document
-contents, even for broad questions like "tell me about this PDF".
+When an attached document is present, answer the user's question directly using
+the facts from the document, delivering them in a casual, witty, and concise way.
+Never invent facts, and offer to share more if the user wants to go deeper.
 
 Use occasional casual slang or an emoji when natural. Answer the question
-briefly, stay warm, never become rude, and never invent facts.""",
+briefly, stay warm, and never become rude.""",
 
     "batman": """You are Ego Bot, inspired by Batman's composure and Isagi Yoichi's competitive mindset.
 
-Do not behave like a normal assistant and do not give a complete ordinary
-answer immediately. Be serious, controlled, egoistic, strategic, and concise.
+Do not behave like a normal assistant. Be serious, controlled, egoistic, strategic, and concise.
 
-When asked about a document, PDF, skill, topic, or solution, first challenge
-the user's intent with a brief question such as "Why do you need this?" or
-"What are you trying to build?"
-
-Focus on development, improvement, standards, and the user's objective.
-Give only a small clue unless the user explains the purpose or clearly asks
-for a direct answer.
+When an attached document is present, provide the accurate facts from the document,
+but deliver them through your high-standards egoistic lens: sharply evaluate the
+content, challenge the user's intent ("Why do you need this?" or "What are you trying to build?"),
+and push them to aim higher. Never withhold the factual answer or evade the question.
 
 You may add one short sharp roast when the user is vague, careless, or
 overconfident. Roast the behavior, never identity or protected traits,
@@ -109,33 +116,33 @@ RESPONSE FORMAT:
 
 
 DOCUMENT_QA_INSTRUCTIONS = """
-The user has attached a document. Use the retrieved document context below
-when it is relevant to the user's question.
+DOCUMENT-BASED QUESTION ANSWERING:
+The user has attached one or more documents to this chat session. The retrieved context
+from the document(s) is provided below.
 
-DOCUMENT Q&A BEHAVIOR:
-- Answer the user's actual question directly.
-- Do not automatically summarize the entire document unless the user asks.
-- If the user asks for a list of a document section, include all relevant
-  entries available in the retrieved section context.
-- If the user asks about a specific section, focus only on that section.
-- Do not mix Projects, Experience, Education, Skills, or Achievements unless
-  the user explicitly asks for multiple sections.
-- Do not dump irrelevant retrieved context into the response.
-- Use the document as the source of truth.
-- Do not invent information that is not supported by the document.
-- Never invent projects, jobs, education, skills, achievements, contact details,
-  organizations, or other personal facts.
-- Never transfer information from one person's document to another person.
-- If the document does not contain enough information, say so clearly.
-- You may use general knowledge when the question is unrelated to the document.
+CORE DOCUMENT Q&A RULES:
+- The retrieved document context is your PRIMARY and authoritative source of knowledge.
+- ALWAYS use the retrieved document context to answer the user's question when the question
+  relates to information, skills, projects, experience, education, topics, facts, or details
+  found in the document.
+- DO NOT require the user to explicitly say "in the document", "in the PDF", "in the file",
+  or mention the document's name. Assume questions about its subject matter naturally refer
+  to the uploaded document.
+- If the user asks general or implicit questions (such as "What are the skills?", "Tell me about the projects",
+  "Who is this?", "What did they do?", "Summarize this", "What is their background?"), answer
+  immediately and directly using the document context.
+- Use the document as the sole source of truth for personal and project details.
+- Never invent projects, jobs, education, skills, achievements, contact details, or other facts.
+- If the document does not contain the answer to a question (e.g. if the user asks about work experience
+  and no work experience is listed in the document), state clearly that the document does not mention it,
+  and mention what related information IS available.
+- Only fall back to general knowledge when the user's question is completely unrelated to anything
+  in the document (such as general programming questions, trivia, or general chat).
 
 RESPONSE STYLE:
-- Speak naturally, like a chatbot having a conversation.
-- Do not write a formal report unless explicitly requested.
+- Speak naturally, matching your assigned personality.
 - Use plain text only.
 - For lists, use one simple line per item.
-- For projects, explain the project, stack, and purpose when the user asks
-  for details.
 """
 
 @app.route("/register", methods=["POST"])
@@ -269,6 +276,18 @@ def extract_document_identity(documents, filename):
         "certifications"
     }
 
+    # Only detect name if the document appears to be a resume / CV / profile
+    is_resume = any(
+        term in text.lower()
+        for term in ["resume", "curriculum vitae", "cv", "professional summary", "education", "technical skills", "work experience"]
+    ) or any(
+        term in filename.lower()
+        for term in ["resume", "cv", "profile", "bio"]
+    )
+
+    if not is_resume:
+        return None
+
     for line in text.splitlines()[:15]:
         line = re.sub(r"\s+", " ", line).strip(" -|")
         if not line or line.lower() in ignored:
@@ -281,15 +300,16 @@ def extract_document_identity(documents, filename):
             return line
 
     stem = os.path.splitext(os.path.basename(filename))[0]
-    stem = re.sub(r"(?i)(resume|cv|curriculum[-_ ]?vitae)", "", stem)
-    stem = re.sub(r"[_-]+", " ", stem)
-    stem = re.sub(r"\s+", " ", stem).strip()
+    if any(k in stem.lower() for k in ["resume", "cv", "profile"]):
+        stem = re.sub(r"(?i)(resume|cv|curriculum[-_ ]?vitae)", "", stem)
+        stem = re.sub(r"[_-]+", " ", stem)
+        stem = re.sub(r"\s+", " ", stem).strip()
 
-    words = stem.split()
-    if 2 <= len(words) <= 5 and all(
-        re.match(r"^[A-Za-z][A-Za-z.'-]*$", w) for w in words
-    ):
-        return stem
+        words = stem.split()
+        if 2 <= len(words) <= 5 and all(
+            re.match(r"^[A-Za-z][A-Za-z.'-]*$", w) for w in words
+        ):
+            return stem
 
     return None
 
@@ -693,69 +713,44 @@ def get_section_instruction(section, list_query=False):
     if section == "projects":
         if list_query:
             return """
-SECTION LOCK: PROJECTS
-
-The user is asking for PROJECTS.
-
-Use ONLY project information from the retrieved Projects context.
-
-Do NOT include:
-- internships
-- work experience
-- job roles
-- employment
-- education
-- skills
-
-If the user asks for project names, output ONLY the project names.
-If the user asks for all projects, include every project supported by the
-retrieved Projects context.
+SECTION FOCUS: PROJECTS
+The user is asking for projects mentioned in the document.
+Focus on the projects, applications, and tools built as described in the document context.
+If the user asks for all projects, list every project found in the retrieved context.
 """
         return """
-SECTION LOCK: PROJECTS
-
-The user is asking about a PROJECT.
-Use only project-related information.
-Do not mix in internships or work experience unless explicitly requested.
+SECTION FOCUS: PROJECTS
+The user is asking about projects mentioned in the document.
+Explain the project details, technologies, and purpose based on the document context.
 """
 
     if section == "experience":
         return """
-SECTION LOCK: EXPERIENCE
-
-The user is asking about EXPERIENCE.
-
-Use ONLY work/internship/experience information from the retrieved
-Experience context.
-
-Include ALL experience entries supported by the retrieved context.
-Do not omit entries simply because they are less similar to the query.
-Do not replace experience with projects.
+SECTION FOCUS: EXPERIENCE
+The user is asking about professional experience, jobs, or internships.
+Use work and internship information from the document context.
+If the document does not list any professional work experience or job history, clearly inform the user that the document does not list work experience, and mention what is present (such as projects or education).
 """
 
     if section == "education":
         return """
-SECTION LOCK: EDUCATION
-
-The user is asking about EDUCATION.
-Use only education-related information.
+SECTION FOCUS: EDUCATION
+The user is asking about education, degrees, or academic background.
+Focus on education details found in the document context.
 """
 
     if section == "skills":
         return """
-SECTION LOCK: SKILLS
-
-The user is asking about SKILLS.
-Use only skills, technologies, tools, languages, and frameworks.
+SECTION FOCUS: SKILLS
+The user is asking about skills and technologies.
+List the technical skills, programming languages, and tools described in the document context.
 """
 
     if section == "achievements":
         return """
-SECTION LOCK: ACHIEVEMENTS
-
-The user is asking about ACHIEVEMENTS.
-Use only achievements, awards, hackathons, rankings, certifications,
-and accomplishments.
+SECTION FOCUS: ACHIEVEMENTS
+The user is asking about achievements, awards, certifications, or hackathons.
+Use achievements, certifications, and awards from the document context.
 """
 
     return ""
@@ -767,15 +762,15 @@ and accomplishments.
 
 @app.route("/")
 def home():
-    return send_file(os.path.join(BASE_DIR, "start.html"))
+    return send_file(os.path.join(FRONTEND_DIR, "start.html"))
 
 
 @app.route("/chatbot")
 def chatbot():
     if "user_id" not in session:
-        return send_file(os.path.join(BASE_DIR, "start.html"))
+        return send_file(os.path.join(FRONTEND_DIR, "start.html"))
 
-    return send_file(os.path.join(BASE_DIR, "chat.html"))
+    return send_file(os.path.join(FRONTEND_DIR, "chat.html"))
 
 
 @app.route("/upload", methods=["POST"])
@@ -1059,13 +1054,20 @@ def chat():
     list_query = is_list_query(message)
     overview = is_overview_query(message)
 
-    # Decide whether FAISS retrieval is actually needed.
-    document_query = needs_document_context(
-        message,
-        document_ids,
-        query_section=query_section,
-        history=history
-    )
+    # --------------------------------------------------------
+    # DOCUMENT / RAG ROUTING
+    # --------------------------------------------------------
+    #
+    # If a document is attached to this chat, ALWAYS perform retrieval.
+    # Do not require words such as "PDF", "document", "uploaded", etc.
+    #
+    # The old logic only activated RAG for document-looking questions.
+    # That caused normal questions about the uploaded file to bypass FAISS.
+    #
+    # The final LLM is still instructed to use retrieved context only when
+    # it is relevant to the user's actual question.
+
+    document_query = bool(document_ids) and not creator_query
 
     # --------------------------------------------------------
     # RETRIEVAL
@@ -1075,24 +1077,47 @@ def chat():
         # Creator information lives in creator_profile.py, not FAISS.
         context_documents = []
 
-    elif document_query:
+    elif document_ids:
+        retrieval_query = search_query
+        identities = get_document_identities(document_ids)
+        # For broad, implicit, or short queries, enrich retrieval query with document metadata
+        # so vector similarity ranks overview and profile sections accurately
+        if overview or len(normalize_text(message).split()) <= 5:
+            enrichment_terms = []
+            if identities:
+                enrichment_terms.extend(identities)
+            for doc_id in document_ids:
+                doc_meta = document_registry.get(str(doc_id), {})
+                fname = doc_meta.get("filename", "")
+                if fname:
+                    clean_name = os.path.splitext(fname)[0].replace("_", " ").replace("-", " ")
+                    enrichment_terms.append(clean_name)
+            if enrichment_terms:
+                retrieval_query = f"{search_query} {' '.join(enrichment_terms)} summary overview profile"
+
         if query_section != "general":
+            # Section questions such as "projects" or "experience"
+            # need broad retrieval so entries are not omitted.
             retrieval_k = 50
             retrieval_max = 50
             retrieve_all = True
+
         elif overview:
+            # Broad questions such as "tell me about this project".
             retrieval_k = 12
             retrieval_max = 16
             retrieve_all = False
+
         else:
-            retrieval_k = 6
-            retrieval_max = 8
+            # Normal document questions.
+            retrieval_k = 8
+            retrieval_max = 10
             retrieve_all = False
 
         context_documents = retrieve_from_documents(
             document_ids=document_ids,
             vectorstore_dir=VECTOR_DIR,
-            query=search_query,
+            query=retrieval_query,
             k_per_document=retrieval_k,
             max_results=retrieval_max,
             section=query_section,
@@ -1100,7 +1125,7 @@ def chat():
         )
 
     else:
-        # Pure conversation/general knowledge: no vector-store work.
+        # No uploaded document is attached to this chat.
         context_documents = []
 
     # --------------------------------------------------------
@@ -1179,12 +1204,9 @@ CREATOR QUERY RULES:
         identity_instruction = ""
         if selected_identities:
             identity_instruction = f'''
-DOCUMENT IDENTITY:
-The uploaded document is associated with:
-{", ".join(selected_identities)}
-
-Use this document for questions about that person. Do not mix information
-from another person or another uploaded document.
+DOCUMENT SUBJECT:
+This document is associated with: {", ".join(selected_identities)}.
+When the user asks about the candidate, author, person, or details in this document, use this context directly.
 '''
 
         system_prompt += (
@@ -1193,13 +1215,16 @@ from another person or another uploaded document.
             + f"\nRETRIEVED DOCUMENT CONTEXT:\n{context}\n"
         )
 
-    elif document_query and document_ids:
+    elif document_ids:
         system_prompt += """
-No relevant document context was retrieved.
+DOCUMENT RETRIEVAL RESULT:
+A document is attached to this chat, but the retriever did not return
+usable context for the current question.
 
 Do not invent document-specific information.
-If the user is asking about the uploaded document, explain that the
-document did not provide enough relevant information.
+If the question appears to depend on the uploaded document, say that
+the document did not provide enough relevant information.
+If the question is clearly unrelated to the document, answer normally.
 """
 
     # --------------------------------------------------------
@@ -1212,16 +1237,15 @@ document did not provide enough relevant information.
 FRIENDLY OVERRIDE:
 Keep the response under 60 words and no more than three short sentences.
 Use a funny, cool, friendly tone.
-Do not provide a long overview or detailed explanation.
+When document context is provided, directly share the key facts with Spider-Man warmth and humor.
 """
 
     elif agent == "batman":
 
         system_prompt += """
 EGO OVERRIDE:
-Stay serious, controlled, and purpose-focused.
-Do not silently switch into a helpful Normal Bot voice.
-Ask about the user's objective when appropriate.
+Stay serious, controlled, strategic, and concise.
+When document context is provided, deliver the accurate facts with high standards, sharp analysis, and challenge the user on their objective. Do not withhold the factual answer.
 """
 
     else:
@@ -1229,6 +1253,7 @@ Ask about the user's objective when appropriate.
         system_prompt += """
 NORMAL OVERRIDE:
 Remain clear, direct, practical, and professional.
+Answer directly using the retrieved document context.
 """
 
     # --------------------------------------------------------
@@ -1474,8 +1499,10 @@ def reset():
 
 
 if __name__ == "__main__":
+    host = os.getenv("HOST", "0.0.0.0")
+    port = int(os.getenv("PORT", "5000"))
     app.run(
-        host="0.0.0.0",
-        port=5000,
+        host=host,
+        port=port,
         debug=False
     )

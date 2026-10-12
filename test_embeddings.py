@@ -1,10 +1,8 @@
-from langchain_huggingface import HuggingFaceEmbeddings
+from rag.embeddings import get_embeddings
 
 print("Loading embedding model...")
 
-embeddings = HuggingFaceEmbeddings(
-    model_name="sentence-transformers/all-MiniLM-L6-v2"
-)
+embeddings = get_embeddings()
 
 text = "TriPersona is a chatbot that can answer questions from uploaded documents."
 

@@ -3,15 +3,21 @@ Torch-free local embeddings for TriPersona.
 
 Uses FastEmbed + ONNX Runtime instead of sentence-transformers/PyTorch.
 The class implements LangChain's Embeddings interface, so the existing
-FAISS/vectorstore code can continue to use it unchanged.
+vectorstore code can continue to use it unchanged.
 """
 
+import os
 from typing import List
-
+from dotenv import load_dotenv
 from fastembed import TextEmbedding
 from langchain_core.embeddings import Embeddings
 
-MODEL_NAME = "BAAI/bge-small-en-v1.5"
+load_dotenv()
+
+# Suppress Hugging Face symlink warnings on Windows
+os.environ.setdefault("HF_HUB_DISABLE_SYMLINKS_WARNING", "1")
+
+MODEL_NAME = os.getenv("EMBEDDING_MODEL", "BAAI/bge-small-en-v1.5")
 
 _embedding_model = None
 

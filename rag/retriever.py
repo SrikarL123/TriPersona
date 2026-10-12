@@ -31,21 +31,20 @@ def retrieve_from_document(
         return []
 
     # --------------------------------------------------------
-    # SECTION QUERY
+    # SECTION-AWARE RETRIEVAL WITH ROBUST FALLBACK
     # --------------------------------------------------------
+    # When a specific section is detected (e.g. projects, skills,
+    # experience, education), prioritize chunks belonging to that section.
     #
-    # For "all projects" / "experience" questions, retrieve ALL
-    # indexed chunks first, then filter by section.
-    #
-    # This prevents FAISS top-k similarity from hiding valid entries.
-    #
+    # KEY FIX: Never discard all results when no chunk matches the section
+    # tag (e.g. in general PDFs/documents, or when a resume has no formal
+    # 'experience' section). Semantic similarity matches are preserved as
+    # fallback so the LLM always receives relevant document context.
+    # --------------------------------------------------------
 
     if section and section != "general" and retrieve_all_section_chunks:
-
         search_k = total_documents
-
     else:
-
         search_k = min(
             total_documents,
             max(k * 3, 12)
@@ -56,49 +55,44 @@ def retrieve_from_document(
         k=search_k
     )
 
-    documents = []
+    section_matched = []
+    other_docs = []
 
     for document, score in results:
+        doc_copy = document.model_copy(deep=True)
+        doc_copy.metadata["document_id"] = document_id
+        doc_copy.metadata["score"] = float(score)
 
-        document = document.model_copy(
-            deep=True
-        )
+        doc_section = doc_copy.metadata.get("section", "general")
 
-        document.metadata["document_id"] = (
-            document_id
-        )
+        if section and section != "general" and doc_section == section:
+            section_matched.append(doc_copy)
+        else:
+            other_docs.append(doc_copy)
 
-        # FAISS score here is distance.
-        # Lower distance = more similar.
-        document.metadata["score"] = float(
-            score
-        )
-
-        document_section = document.metadata.get(
-            "section",
-            "general"
-        )
-
-        if (
-            section
-            and section != "general"
-            and document_section != section
-        ):
-            continue
-
-        documents.append(
-            document
-        )
-
-    # Lower FAISS distance is better.
-    documents.sort(
-        key=lambda doc: doc.metadata.get(
-            "score",
-            float("inf")
-        )
+    # Lower score (distance) is better.
+    section_matched.sort(
+        key=lambda doc: doc.metadata.get("score", float("inf"))
+    )
+    other_docs.sort(
+        key=lambda doc: doc.metadata.get("score", float("inf"))
     )
 
-    return documents[:k]
+    if section and section != "general":
+        if retrieve_all_section_chunks and section_matched:
+            # If section chunks exist and all were requested, include them all
+            # plus additional relevant chunks if room allows.
+            combined = section_matched + other_docs
+            return combined[:max(k, len(section_matched))]
+        elif section_matched:
+            # Prioritize matching section chunks, fill remainder with top semantic matches
+            combined = section_matched + other_docs
+            return combined[:k]
+        else:
+            # No chunks tagged with this section: return top semantic similarity results
+            return other_docs[:k]
+    else:
+        return other_docs[:k]
 
 
 def retrieve_from_documents(
@@ -116,10 +110,7 @@ def retrieve_from_documents(
     all_documents = []
 
     for document_id in document_ids:
-
-        document_id = str(
-            document_id
-        ).strip()
+        document_id = str(document_id).strip()
 
         if not document_id:
             continue
@@ -130,41 +121,25 @@ def retrieve_from_documents(
             query=query,
             k=k_per_document,
             section=section,
-            retrieve_all_section_chunks=(
-                retrieve_all_section_chunks
-            )
+            retrieve_all_section_chunks=retrieve_all_section_chunks
         )
 
-        all_documents.extend(
-            results
-        )
+        all_documents.extend(results)
 
+    # Sort all retrieved chunks across documents by similarity
     all_documents.sort(
-        key=lambda doc: doc.metadata.get(
-            "score",
-            float("inf")
-        )
+        key=lambda doc: doc.metadata.get("score", float("inf"))
     )
 
-    # Avoid returning duplicate chunks.
+    # Deduplicate chunks
     unique_documents = []
     seen = set()
 
     for document in all_documents:
-
         content_key = (
-            document.metadata.get(
-                "document_id",
-                ""
-            ),
-            document.metadata.get(
-                "source",
-                ""
-            ),
-            document.metadata.get(
-                "page",
-                None
-            ),
+            document.metadata.get("document_id", ""),
+            document.metadata.get("source", ""),
+            document.metadata.get("page", None),
             document.page_content.strip()
         )
 
@@ -172,8 +147,24 @@ def retrieve_from_documents(
             continue
 
         seen.add(content_key)
-        unique_documents.append(
-            document
-        )
+        unique_documents.append(document)
 
     return unique_documents[:max_results]
+
+
+class SimpleRetriever:
+    """Wrapper providing LangChain-compatible retriever interface."""
+
+    def __init__(self, vectorstore, k=4):
+        self.vectorstore = vectorstore
+        self.k = k
+
+    def invoke(self, query):
+        results = self.vectorstore.similarity_search_with_score(query, k=self.k)
+        return [doc for doc, _ in results]
+
+
+def get_retriever(vectorstore_path, k=4):
+    """Load a vector store and return a retriever object."""
+    vectorstore = load_vectorstore(vectorstore_path)
+    return SimpleRetriever(vectorstore, k=k)

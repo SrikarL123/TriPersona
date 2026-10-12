@@ -1,7 +1,14 @@
+import os
 from rag.retriever import get_retriever
 
-
 VECTORSTORE_PATH = "vector_store/test_bountyflow"
+if not os.path.exists(VECTORSTORE_PATH):
+    # Find first available store directory
+    for item in os.listdir("vector_store"):
+        p = os.path.join("vector_store", item)
+        if os.path.isdir(p) and os.path.exists(os.path.join(p, "documents.json")):
+            VECTORSTORE_PATH = p
+            break
 
 
 print("Loading vector store...")
