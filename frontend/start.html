@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -10,67 +11,70 @@
       box-sizing: border-box;
     }
 
-    html {
+    html, body {
       width: 100%;
-      height: 100%;
+      min-height: 100%;
       margin: 0;
-      padding: 0;
-      overflow: hidden;
-      background: #050505;
     }
 
     body {
       position: relative;
-      width: 100vw;
-      height: 100vh;
       min-height: 100vh;
-      margin: 0;
-      padding: 0;
-      overflow: hidden;
+      overflow-x: hidden;
       background: #050505;
-      color: white;
+      color: #fff;
       font-family: Arial, Helvetica, sans-serif;
     }
 
-    #acid-bg {
-      position: fixed !important;
-      top: 0 !important;
-      left: 0 !important;
-      right: 0 !important;
-      bottom: 0 !important;
-      width: 100vw !important;
-      height: 100vh !important;
-      min-width: 100vw;
-      min-height: 100vh;
-      z-index: 0;
-      pointer-events: auto;
-    }
+    
+#acid-bg {
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
 
-    #acid-bg::after {
-      content: "";
-      position: absolute;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.16);
-      pointer-events: none;
-    }
+#acid-bg canvas {
+  position: absolute;
+  inset: 0;
+  width: 100% !important;
+  height: 100% !important;
+  display: block;
+  opacity: 1;
+  pointer-events: none;
+}
+
+body {
+  position: relative;
+  min-height: 100vh;
+  margin: 0;
+  background: #050505;
+  color: white;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.box {
+  position: relative;
+  z-index: 2;
+}
+
 
     .box {
-      position: fixed;
+      position: relative;
       z-index: 2;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: min(420px, calc(100vw - 32px));
+      width: min(420px, calc(100% - 32px));
+      margin: 40px auto;
       padding: 38px 34px 34px;
       text-align: center;
-      background: rgba(5, 5, 8, 0.72);
+      background: rgba(5, 5, 8, 0.82);
       border: 1px solid rgba(255, 255, 255, 0.12);
       border-radius: 18px;
       backdrop-filter: blur(14px);
       -webkit-backdrop-filter: blur(14px);
-      box-shadow:
-        0 25px 80px rgba(0, 0, 0, 0.55),
-        inset 0 1px 0 rgba(255, 255, 255, 0.07);
+      box-shadow: 0 25px 80px rgba(0, 0, 0, 0.55);
     }
 
     .brand {
@@ -81,7 +85,7 @@
     }
 
     .brand span {
-      background: linear-gradient(90deg, #8b5cf6, #c084fc, #ffffff);
+      background: linear-gradient(90deg, #8b5cf6, #c084fc, #fff);
       -webkit-background-clip: text;
       background-clip: text;
       color: transparent;
@@ -105,20 +109,18 @@
     }
 
     .tab {
+      padding: 10px;
       border: 0;
       border-radius: 8px;
-      padding: 10px;
       background: transparent;
-      color: rgba(255, 255, 255, 0.52);
+      color: rgba(255, 255, 255, 0.6);
       font-size: 14px;
       cursor: pointer;
-      transition: 0.2s ease;
     }
 
     .tab.active {
-      color: white;
-      background: rgba(82, 39, 255, 0.42);
-      box-shadow: 0 4px 18px rgba(82, 39, 255, 0.18);
+      color: #fff;
+      background: rgba(82, 39, 255, 0.5);
     }
 
     .form {
@@ -163,29 +165,85 @@
     .field label {
       display: block;
       margin-bottom: 7px;
-      color: rgba(255, 255, 255, 0.68);
+      color: rgba(255, 255, 255, 0.75);
       font-size: 12px;
     }
 
     .field input {
+      display: block;
       width: 100%;
       padding: 13px 14px;
       border: 1px solid rgba(255, 255, 255, 0.13);
       border-radius: 9px;
       outline: none;
       background: rgba(0, 0, 0, 0.42);
-      color: white;
+      color: #fff;
       font-size: 14px;
       transition: border-color 0.2s, box-shadow 0.2s;
     }
 
     .field input::placeholder {
-      color: #666;
+      color: #777;
     }
 
     .field input:focus {
       border-color: #7c5cff;
       box-shadow: 0 0 0 3px rgba(82, 39, 255, 0.12);
+    }
+
+    .password-input-wrap {
+      position: relative;
+      width: 100%;
+    }
+
+    .password-input-wrap input {
+      padding-right: 48px;
+    }
+
+    .password-toggle {
+      position: absolute;
+      top: 50%;
+      right: 7px;
+      transform: translateY(-50%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 34px;
+      height: 34px;
+      padding: 0;
+      border: 0;
+      border-radius: 7px;
+      background: transparent;
+      color: rgba(255, 255, 255, 0.6);
+      cursor: pointer;
+    }
+
+    .password-toggle:hover {
+      color: #c084fc;
+      background: rgba(255, 255, 255, 0.07);
+    }
+
+    .password-toggle:focus-visible {
+      outline: 2px solid #a855f7;
+      outline-offset: 2px;
+    }
+
+    .password-toggle svg {
+      width: 19px;
+      height: 19px;
+      pointer-events: none;
+    }
+
+    .password-toggle .eye-off-icon {
+      display: none;
+    }
+
+    .password-toggle[aria-pressed="true"] .eye-icon {
+      display: none;
+    }
+
+    .password-toggle[aria-pressed="true"] .eye-off-icon {
+      display: block;
     }
 
     .submit-btn {
@@ -195,17 +253,15 @@
       border: 0;
       border-radius: 9px;
       background: linear-gradient(135deg, #5227ff, #7c3aed);
-      color: white;
+      color: #fff;
       font-size: 14px;
       font-weight: 600;
       cursor: pointer;
-      transition: transform 0.2s, opacity 0.2s, box-shadow 0.2s;
-      box-shadow: 0 8px 24px rgba(82, 39, 255, 0.2);
+      transition: opacity 0.2s, transform 0.2s;
     }
 
     .submit-btn:hover {
       transform: translateY(-1px);
-      box-shadow: 0 10px 28px rgba(82, 39, 255, 0.3);
     }
 
     .submit-btn:disabled {
@@ -220,16 +276,18 @@
       text-align: center;
       font-size: 12px;
       color: #ff8585;
+      overflow-wrap: anywhere;
     }
 
     .footer {
       margin-top: 22px;
-      color: rgba(255, 255, 255, 0.35);
+      color: rgba(255, 255, 255, 0.4);
       font-size: 11px;
     }
 
     @media (max-width: 600px) {
       .box {
+        margin: 20px auto;
         padding: 30px 24px 26px;
       }
 
@@ -241,7 +299,6 @@
 </head>
 
 <body>
-
   <div id="acid-bg"></div>
 
   <main class="box">
@@ -253,19 +310,26 @@
     </p>
 
     <div class="tabs">
-      <button class="tab active" id="loginTab" type="button">Sign In</button>
-      <button class="tab" id="signupTab" type="button">Create Account</button>
+      <button class="tab active" id="loginTab" type="button">
+        Sign In
+      </button>
+      <button class="tab" id="signupTab" type="button">
+        Create Account
+      </button>
     </div>
 
-    <!-- LOGIN -->
+    <!-- SIGN IN FORM -->
     <form class="form active" id="loginForm">
       <h2 class="form-title">Welcome back</h2>
-      <p class="form-subtitle">Sign in to continue your conversations.</p>
+      <p class="form-subtitle">
+        Sign in to continue your conversations.
+      </p>
 
       <div class="field">
         <label for="loginUsername">Username</label>
         <input
           id="loginUsername"
+          name="username"
           type="text"
           placeholder="Enter your username"
           autocomplete="username"
@@ -275,31 +339,66 @@
 
       <div class="field">
         <label for="loginPassword">Password</label>
-        <input
-          id="loginPassword"
-          type="password"
-          placeholder="Enter your password"
-          autocomplete="current-password"
-          required
-        >
+
+        <div class="password-input-wrap">
+          <input
+            id="loginPassword"
+            name="password"
+            type="password"
+            placeholder="Enter your password"
+            autocomplete="current-password"
+            required
+          >
+
+          <button
+            class="password-toggle"
+            type="button"
+            data-password-toggle
+            aria-label="Show password"
+            aria-controls="loginPassword"
+            aria-pressed="false"
+            title="Show password"
+          >
+            <svg class="eye-icon" viewBox="0 0 24 24"
+                 fill="none" stroke="currentColor" stroke-width="1.8"
+                 stroke-linecap="round" stroke-linejoin="round"
+                 aria-hidden="true">
+              <path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/>
+              <circle cx="12" cy="12" r="3"/>
+            </svg>
+
+            <svg class="eye-off-icon" viewBox="0 0 24 24"
+                 fill="none" stroke="currentColor" stroke-width="1.8"
+                 stroke-linecap="round" stroke-linejoin="round"
+                 aria-hidden="true">
+              <path d="m3 3 18 18"/>
+              <path d="M10.6 10.6a2 2 0 0 0 2.8 2.8"/>
+              <path d="M9.9 5.2A10.8 10.8 0 0 1 12 5c6.4 0 10 7 10 7a15.7 15.7 0 0 1-4 4.7"/>
+              <path d="M6.2 6.2C3.5 8 2 12 2 12s3.6 7 10 7c1.2 0 2.3-.3 3.3-.7"/>
+            </svg>
+          </button>
+        </div>
       </div>
 
       <button class="submit-btn" id="loginBtn" type="submit">
         Sign In
       </button>
 
-      <div class="message" id="loginMessage"></div>
+      <div class="message" id="loginMessage" role="status"></div>
     </form>
 
-    <!-- SIGNUP -->
+    <!-- CREATE ACCOUNT FORM -->
     <form class="form" id="signupForm">
       <h2 class="form-title">Create your account</h2>
-      <p class="form-subtitle">Your chats will be saved to your account.</p>
+      <p class="form-subtitle">
+        Your chats will be saved to your account.
+      </p>
 
       <div class="field">
         <label for="signupUsername">Username</label>
         <input
           id="signupUsername"
+          name="username"
           type="text"
           placeholder="Choose a username"
           autocomplete="username"
@@ -309,71 +408,163 @@
 
       <div class="field">
         <label for="signupPassword">Password</label>
-        <input
-          id="signupPassword"
-          type="password"
-          placeholder="At least 6 characters"
-          autocomplete="new-password"
-          required
-        >
+
+        <div class="password-input-wrap">
+          <input
+            id="signupPassword"
+            name="password"
+            type="password"
+            placeholder="At least 6 characters"
+            autocomplete="new-password"
+            minlength="6"
+            required
+          >
+
+          <button
+            class="password-toggle"
+            type="button"
+            data-password-toggle
+            aria-label="Show password"
+            aria-controls="signupPassword"
+            aria-pressed="false"
+            title="Show password"
+          >
+            <svg class="eye-icon" viewBox="0 0 24 24"
+                 fill="none" stroke="currentColor" stroke-width="1.8"
+                 stroke-linecap="round" stroke-linejoin="round"
+                 aria-hidden="true">
+              <path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/>
+              <circle cx="12" cy="12" r="3"/>
+            </svg>
+
+            <svg class="eye-off-icon" viewBox="0 0 24 24"
+                 fill="none" stroke="currentColor" stroke-width="1.8"
+                 stroke-linecap="round" stroke-linejoin="round"
+                 aria-hidden="true">
+              <path d="m3 3 18 18"/>
+              <path d="M10.6 10.6a2 2 0 0 0 2.8 2.8"/>
+              <path d="M9.9 5.2A10.8 10.8 0 0 1 12 5c6.4 0 10 7 10 7a15.7 15.7 0 0 1-4 4.7"/>
+              <path d="M6.2 6.2C3.5 8 2 12 2 12s3.6 7 10 7c1.2 0 2.3-.3 3.3-.7"/>
+            </svg>
+          </button>
+        </div>
       </div>
 
       <div class="field">
         <label for="signupConfirm">Confirm Password</label>
-        <input
-          id="signupConfirm"
-          type="password"
-          placeholder="Enter your password again"
-          autocomplete="new-password"
-          required
-        >
+
+        <div class="password-input-wrap">
+          <input
+            id="signupConfirm"
+            name="confirmPassword"
+            type="password"
+            placeholder="Enter your password again"
+            autocomplete="new-password"
+            required
+          >
+
+          <button
+            class="password-toggle"
+            type="button"
+            data-password-toggle
+            aria-label="Show password"
+            aria-controls="signupConfirm"
+            aria-pressed="false"
+            title="Show password"
+          >
+            <svg class="eye-icon" viewBox="0 0 24 24"
+                 fill="none" stroke="currentColor" stroke-width="1.8"
+                 stroke-linecap="round" stroke-linejoin="round"
+                 aria-hidden="true">
+              <path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/>
+              <circle cx="12" cy="12" r="3"/>
+            </svg>
+
+            <svg class="eye-off-icon" viewBox="0 0 24 24"
+                 fill="none" stroke="currentColor" stroke-width="1.8"
+                 stroke-linecap="round" stroke-linejoin="round"
+                 aria-hidden="true">
+              <path d="m3 3 18 18"/>
+              <path d="M10.6 10.6a2 2 0 0 0 2.8 2.8"/>
+              <path d="M9.9 5.2A10.8 10.8 0 0 1 12 5c6.4 0 10 7 10 7a15.7 15.7 0 0 1-4 4.7"/>
+              <path d="M6.2 6.2C3.5 8 2 12 2 12s3.6 7 10 7c1.2 0 2.3-.3 3.3-.7"/>
+            </svg>
+          </button>
+        </div>
       </div>
 
       <button class="submit-btn" id="signupBtn" type="submit">
         Create Account
       </button>
 
-      <div class="message" id="signupMessage"></div>
+      <div class="message" id="signupMessage" role="status"></div>
     </form>
 
     <div class="footer">TriPersona AI</div>
   </main>
 
   <script type="module">
-    import { createAcidSquares } from "/static/acidsquares.js";
+    
+import { createAcidSquares } from "/static/acidsquares.js";
 
-    createAcidSquares(document.getElementById("acid-bg"), {
-      color1: "#5227FF",
-      color2: "#A855F7",
-      color3: "#FFFFFF",
-      detail: "medium",
-      speed: 0.7,
-      waveDepth: 1,
-      zoom: 1.3,
-      density: 10,
-      glow: 1,
-      exposure: 2700,
-      spread: 0.3,
-      stepSize: 0.002,
-      colorShift: 0,
-      contrast: 1,
-      brightness: 1,
-      opacity: 1,
-      mouseInteraction: true,
-      mouseStrength: 0.1,
-      mouseRadius: 0.35,
-      blur: 0,
-      grain: true,
-      grainIntensity: 0.05
-    });
+const background = document.getElementById("acid-bg");
+
+createAcidSquares(background, {
+  color1: "#5227FF",
+  color2: "#A855F7",
+  color3: "#FFFFFF",
+  detail: "medium",
+  speed: 0.7,
+  waveDepth: 1,
+  zoom: 1.3,
+  density: 10,
+  glow: 1,
+  exposure: 2700,
+  spread: 0.3,
+  stepSize: 0.002,
+  colorShift: 0,
+  contrast: 1,
+  brightness: 1,
+  opacity: 1,
+  mouseInteraction: true,
+  mouseStrength: 0.1,
+  mouseRadius: 0.35,
+  blur: 0,
+  grain: true,
+  grainIntensity: 0.05
+});
+
+    
 
     const loginTab = document.getElementById("loginTab");
     const signupTab = document.getElementById("signupTab");
     const loginForm = document.getElementById("loginForm");
     const signupForm = document.getElementById("signupForm");
-
     const loginMessage = document.getElementById("loginMessage");
     const signupMessage = document.getElementById("signupMessage");
+
+    // Show/hide each password independently.
+    document.querySelectorAll("[data-password-toggle]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const inputId = button.getAttribute("aria-controls");
+        const passwordInput = document.getElementById(inputId);
+
+        if (!passwordInput) return;
+
+        const showPassword = passwordInput.type === "password";
+        passwordInput.type = showPassword ? "text" : "password";
+
+        button.setAttribute("aria-pressed", String(showPassword));
+        button.setAttribute(
+          "aria-label",
+          showPassword ? "Hide password" : "Show password"
+        );
+        button.setAttribute(
+          "title",
+          showPassword ? "Hide password" : "Show password"
+        );
+      });
+    });
 
     function showLogin() {
       loginTab.classList.add("active");
@@ -398,7 +589,7 @@
     loginTab.addEventListener("click", showLogin);
     signupTab.addEventListener("click", showSignup);
 
-    async function submitAuth(form, endpoint, button, messageElement, payload) {
+    async function submitAuth(endpoint, button, messageElement, payload) {
       button.disabled = true;
       messageElement.textContent = "";
 
@@ -411,11 +602,16 @@
           body: JSON.stringify(payload)
         });
 
-        const data = await response.json();
+        let data = {};
+        try {
+          data = await response.json();
+        } catch {
+          data = {};
+        }
 
         if (!response.ok) {
           messageElement.textContent =
-            data.message || "Something went wrong. Please try again.";
+            data.message || data.error || "Authentication failed. Please try again.";
           return false;
         }
 
@@ -435,11 +631,12 @@
 
       const username =
         document.getElementById("loginUsername").value.trim();
+
+      // This ID now exists only once, inside the login form.
       const password =
         document.getElementById("loginPassword").value;
 
       const success = await submitAuth(
-        loginForm,
         "/login",
         document.getElementById("loginBtn"),
         loginMessage,
@@ -475,7 +672,6 @@
       }
 
       const success = await submitAuth(
-        signupForm,
         "/register",
         document.getElementById("signupBtn"),
         signupMessage,
@@ -487,6 +683,5 @@
       }
     });
   </script>
-
 </body>
 </html>
